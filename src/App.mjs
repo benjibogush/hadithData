@@ -14,18 +14,19 @@ class App extends Component {
       <div>
           
         <BrowserRouter>
-          <Home />
-          {/* <Signup />
-            <Login />
-            <Dashboard/> */}
+          {/* 
+           <Home />
+            */}
           <Routes>
-            <Route exact path="/" component={Home} />
-            <Route path="/signup" component={Signup} />
-            <Route path="/login" component={Login} />
-            <Route path="/dashboard" component={Dashboard} />
+            <Route exact path="/" element={<Home/> } />
+            <Route path="/signup" element={<Signup/>} />
+            <Route path="/login" element={<Login/>} />
+            <Route path="/dashboard" element={<Dashboard/>} />
           </Routes>
 
         </BrowserRouter>
+
+        
       </div>
     );
   }

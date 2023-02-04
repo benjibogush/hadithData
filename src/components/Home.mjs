@@ -10,6 +10,7 @@ class Home extends Component {
     return (
       <Container>
         <h1>Home</h1>
+     
         <p>
           <Link to="/login">Login</Link>
         </p>
