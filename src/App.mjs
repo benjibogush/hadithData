@@ -3,7 +3,7 @@
 
 import React, { Component } from "react";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
-import Home from "./components/Home.mjs";
+import Home from "./components/home/Home.mjs";
 import Signup from "./components/signup/Signup.mjs";
 import Login from "./components/login/Login.mjs";
 import Dashboard from "./components/dashboard/Dashboard.mjs";

@@ -1,0 +1,23 @@
+.home {
+  padding: 20px;
+  text-align: center;
+}
+
+.project-item {
+  cursor: pointer;
+  list-style: none;
+  margin-bottom: 10px;
+  padding: 10px;
+  border: 1px solid gray;
+  border-radius: 5px;
+  transition: background-color 0.2s ease-in-out;
+}
+
+.project-item:hover {
+  background-color: lightgray;
+}
+
+.project-item.active {
+  background-color: lightblue;
+  font-weight: bold;
+}
