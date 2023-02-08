@@ -1,82 +1,90 @@
-import React, { useState } from 'react';
-import './dashboard.css';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import Bcrypt from 'bcryptjs';
+import { sanitize, validate } from './utils.mjs';
 
 const Dashboard = () => {
-  const [counter, setCounter] = useState(0);
-  const [color, setColor] = useState('blue');
-  const [dots, setDots] = useState([]);
+  const [weatherReport, setWeatherReport] = useState({});
+  const [topFiveNews, setTopFiveNews] = useState([]);
+  const [guestText, setGuestText] = useState('');
+  const [guestTextEntries, setGuestTextEntries] = useState([]);
 
-  const handleClick = () => {
-    setCounter(counter + 1);
+  useEffect(() => {
+    const fetchWeatherReport = async () => {
+      try {
+        const result = await axios.get(
+          `http://api.openweathermap.org/data/2.5/weather?q=London,uk&appid=${process.env.REACT_APP_WEATHER_API_KEY}`
+        );
+        setWeatherReport(result.data.main);
+      } catch (error) {
+        console.error(error);
+      }
+    };
+
+    const fetchTopFiveNews = async () => {
+      try {
+        const result = await axios.get(
+          `https://newsapi.org/v2/top-headlines?country=us&apiKey=${process.env.REACT_APP_NEWS_API_KEY}`
+        );
+        setTopFiveNews(result.data.articles.slice(0, 5));
+      } catch (error) {
+        console.error(error);
+      }
+    };
+
+    fetchWeatherReport();
+    fetchTopFiveNews();
+  }, []);
+
+  const handleGuestTextChange = (event) => {
+    setGuestText(event.target.value);
   };
 
-  const handleHover = () => {
-    setColor(prevColor => {
-      return prevColor === 'blue' ? 'red' : 'blue';
-    });
-  };
-
-  const generateDots = () => {
-    const newDots = [];
-    for (let i = 0; i < 5; i++) {
-      const x = Math.floor(Math.random() * 500);
-      const y = Math.floor(Math.random() * 500);
-      newDots.push({ x, y });
+  const handleGuestTextSubmit = (event) => {
+    event.preventDefault();
+    if (validate(guestText)) {
+      const maskedText = Bcrypt.hashSync(sanitize(guestText), 10);
+      setGuestTextEntries([...guestTextEntries, maskedText]);
+      setGuestText('');
     }
-    setDots(newDots);
   };
 
   return (
-    <div className="home-container">
-      <h1 className="project-title">Welcome to Our Project</h1>
-      <p>This is a demo of a stylish and accessible Home component that includes:</p>
-      <ul>
-        <li>A project introduction for impaired people</li>
-        <li>A spinning active project tree</li>
-        <li>A game of click counter</li>
-        <li>Hover to color change game</li>
-        <li>A race of a circular object against obstacles in a box</li>
-      </ul>
-      <div className="counter-container">
-        <p>Counter: {counter}</p>
-        <button onClick={handleClick}>Click me!</button>
-      </div>
-      <div className="color-container">
-        <p>Color: {color}</p>
-        <div className="color-change-area" onMouseEnter={handleHover} onMouseLeave={handleHover}></div>
-      </div>
-      <div className="box-container">
-        <div className="box" onLoad={generateDots}>
-          {dots.map(dot => (
-            <div
-              className="dot"
-              style={{ left: `${dot.x}px`, top: `${dot.y}px` }}
-            ></div>
+    <div className="dashboard">
+      <h1>Welcome to the Dashboard!</h1>
+      <div className="cursor-tail-animation"></div>
+      <h2>Top 5 News</h2>
+      {topFiveNews.length ? (
+        <ul>
+          {topFiveNews.map((news, index) => (
+            <li key={index}>{news.title}</li>
           ))}
-        </div>
-      </div>
-    </div>
-  );
-};
+        </ul>
+      ) : (
+        <p>Loading news...</p>
+      )}
+      <h2>Weather Report</h2>
+      {Object.keys(weatherReport).length ? (
+        <p>Temperature: {weatherReport.temp}</p>
+      ) : (
+        <p>Loading weather report...</p>
+      )}
+      <h2>Guest Text Box</h2>
+      <form onSubmit={handleGuestTextSubmit}>
+        <input type="text" value={guestText} onChange={handleGuestTextChange} />
+        <button type="submit">Submit</button>
+</form>
+      
+<h2>Guest Text Entries</h2>
+<ul>
+{guestTextEntries.map((entry, index) => (
+<li key={index}>{entry}</li>
+))}
+</ul>
+
+  </div>
+);
+
+}
 
 export default Dashboard;
-
-
-
-
-
-// import React, { Component } from "react";
-// import { Container } from "react-bootstrap";
-
-// class Dashboard extends Component {
-//   render() {
-//     return (
-//       <Container>
-//         <h1>Dashboard</h1>
-      
-//       </Container>
-//     );
-//   }
-// }
-
-// export default Dashboard;
