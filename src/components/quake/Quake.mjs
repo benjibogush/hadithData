@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import moment from 'moment';
 
-const Earthquake = () => {
+
+const Quake = () => {
   const [earthquakes, setEarthquakes] = useState([]);
 
   useEffect(() => {
@@ -29,4 +31,4 @@ const Earthquake = () => {
   );
 };
 
-export default Earthquake;
+export default Quake;

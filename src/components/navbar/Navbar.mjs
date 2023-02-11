@@ -14,6 +14,12 @@ const Newbar = () => {
             Home
           </Button>
         </Link>
+        
+         <Link to="/latestQuakes">
+          <Button variant="light" className="nav-button">
+            Latest Quakes
+          </Button>
+        </Link>
         <Link to="/signup">
           <Button variant="light" className="nav-button">
             Signup
