@@ -1,4 +1,668 @@
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+
+
+const API_URL = "https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson";
+
+const Quake = () => {
+  const [quakes, setQuakes] = useState([]);
+  const [filteredQuakes, setFilteredQuakes] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [quakesPerPage, setQuakesPerPage] = useState(10);
+  const [filter, setFilter] = useState(1);
+  const [totalPages, setTotalPages] = useState(0);
+  const [page, setPage] = useState(1);
+   const [displayEarthquakes, setDisplayEarthquakes] = useState([]);
+  const [magnitude, setMagnitude] = useState(5);
+   const [loading, setLoading] = useState(true);
+  
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const result = await axios(API_URL);
+      setQuakes(result.data.features);
+      setFilteredQuakes(result.data.features);
+      setLoading(false);
+    };
+    fetchData();
+  }, []);
+
+  
+
+  useEffect(() => {
+    setTotalPages(Math.ceil(filteredQuakes.length / quakesPerPage));
+  }, [filteredQuakes, quakesPerPage]);
+
+  useEffect(() => {
+    const filtered = quakes.filter(quake => quake.properties.mag > filter);
+    setFilteredQuakes(filtered);
+  }, [quakes, filter]);
+
+  const handleFilterChange = event => {
+    setFilter(event.target.value);
+  };
+
+  const handlePageChange = newPage => {
+    setCurrentPage(newPage);
+  };
+
+  
+  const handleLoadMore = () => {
+    let startIndex = currentPage * quakesPerPage;
+    let endIndex = startIndex + 5;
+    setDisplayEarthquakes(displayEarthquakes.concat(filteredQuakes.slice(startIndex, endIndex)));
+    setCurrentPage(currentPage + 1);
+  };
+
+  const handleRefresh = async () => {
+     setLoading(true);
+  const res = await fetch('https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_month.geojson');
+  const data = await res.json();
+  setQuakes(data.features.slice(0, 15));
+  setFilteredQuakes(data.features.filter((earthquake) => earthquake.properties.mag >= magnitude).slice(0, 15));
+  setDisplayEarthquakes(filteredQuakes.slice(0, quakesPerPage));
+  setCurrentPage(1);
+  setLoading(false);
+    // setLoading(true);
+    // const res = await fetch('https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_month.geojson');
+    // const data = await res.json();
+    // setQuakes(data.features.slice(0, 15));
+    // setFilteredQuakes(data.features.filter((earthquake) => earthquake.properties.mag >= magnitude).slice(0, 15));
+    // setDisplayEarthquakes(data.features.filter((earthquake) => earthquake.properties.mag >= magnitude).slice(0, quakesPerPage));
+    // setCurrentPage(1);
+    // setLoading(false);
+  };
+
+  const indexOfLastQuake = currentPage * quakesPerPage;
+  const indexOfFirstQuake = indexOfLastQuake - quakesPerPage;
+  const currentQuakes = filteredQuakes.slice(indexOfFirstQuake, indexOfLastQuake);
+
+  {/* const renderQuakes = currentQuakes.map((quake, index) => (
+    <div key={index} style={{ margin: "20px" }}>
+      <p>
+        <strong>Place:</strong> {quake.properties.place}
+      </p>
+      <p>
+        <strong>Magnitude:</strong> {quake.properties.mag}
+      </p>
+      <p>
+        <strong>Time:</strong> {new Date(quake.properties.time).toString()}
+      </p>
+    </div>
+  ));
+
+  */}
+   const pageNumbers = Array.from({ length: totalPages }, (_, index) => index + 1);
+
+  const renderQuakes = displayEarthquakes.map((quake, index) => (
+  <div key={index} style={{ margin: "20px" }}>
+    <p>
+      <strong>Place:</strong> {quake.properties.place}
+    </p>
+    <p>
+      <strong>Magnitude:</strong> {quake.properties.mag}
+    </p>
+    <p>
+      <strong>Time:</strong> {new Date(quake.properties.time).toString()}
+    </p>
+  </div>
+));
+
+
+  const renderPageNumbers = pageNumbers.map(number => (
+    <button key={number} onClick={() => handlePageChange(number)}>
+      {number}
+    </button>
+  ));
+
+   // {loading && (
+   //      <div className="d-flex justify-content-center">
+   //        <div className="spinner-grow text-primary" role="status">
+   //          <span className="sr-only">Loading...</span>
+   //        </div>
+   //      </div>
+   //    )}
+      
+
+
+return (
+    <div style={{ marginTop: '60px' }}>
+    {loading ? (
+      <div className="d-flex justify-content-center">
+        <div className="spinner-border text-primary" role="status">
+          <span className="sr-only">Loading...</span>
+        </div>
+      </div>
+    ) : (
+      <div className="container">
+        
+     
+
+      
+      <div style={{ textAlign: 'center', marginTop: '20px' }}>
+           <p>Current Page: {currentPage}</p>
+      </div>
+    
+      <div style={{ display: 'flex', justifyContent: 'center' }}>
+        <label htmlFor="filter">Filter quakes by magnitude > </label>
+        {/* <input type="number" min="1" max="10" step="1" defaultValue={5} onChange={(e) => setMagnitude(e.target.value)} /> */}
+        <input
+          type="number"
+          id="filter"
+          min="1"
+          max="10"
+          value={filter}
+          onChange={handleFilterChange}
+        />
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+        {currentQuakes.map((quake, index) => (
+          <div
+            key={quake.id}
+            style={{
+              width: '19%',
+              border: '1px solid black',
+              padding: '10px',
+              textAlign: 'center',
+              backgroundColor:
+                quake.properties.mag === 5  ? 'yellow' : quake.properties.mag <= 3 ? 'green' : quake.properties.mag >= 6  ? 'red' : 'transparent'
+                
+            }}
+          >
+
+            
+          <h3>{quake.properties.title}</h3>
+            <p>Magnitude: {quake.properties.mag}</p>
+          <p>
+            <strong>Time:</strong> {new Date(quake.properties.time).toString()}
+          </p>
+                
+            
+          </div>
+        ))}
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'center' }}>
+        <button onClick={() => handlePageChange(page - 1)} disabled={page === 1}>
+          Prev
+        </button>
+        <button onClick={() => handlePageChange(page + 1)} disabled={page === totalPages}>
+Next
+</button>
+</div>
+<div style={{ display: 'flex', justifyContent: 'center' }}>
+<button onClick={handleLoadMore}>Load More</button>
+</div>
+<div style={{ display: 'flex', justifyContent: 'center' }}>
+<button onClick={handleRefresh}>Refresh List</button>
+</div>
+         </div>
+    )}
+</div>
+);
+};
+
+export default Quake;
+
+
+
+
+
+
+
+
+
+/*
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+
+const API_URL = "https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&limit=15";
+
+const Quake = () => {
+  const [quakes, setQuakes] = useState([]);
+  const [filteredQuakes, setFilteredQuakes] = useState([]);
+  const [showQuakes, setShowQuakes] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [quakesPerPage, setQuakesPerPage] = useState(5);
+  const [filter, setFilter] = useState(5);
+   const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(0);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const result = await axios(API_URL);
+      setQuakes(result.data.features);
+      setFilteredQuakes(result.data.features);
+    };
+    fetchData();
+  }, []);
+
+  const handleRefresh = () => {
+    const fetchData = async () => {
+      const result = await axios(API_URL);
+      setQuakes(result.data.features);
+      setFilteredQuakes(result.data.features);
+    };
+    fetchData();
+  };
+
+  const handleFilter = () => {
+    const minMagnitude = 1;
+  
+    const filteredQuakes = quakes.filter((quake) => quake["Magnitude"] >= minMagnitude);
+    setFilteredQuakes(filteredQuakes);
+  };
+
+    const handleFilterChange = event => {
+    setFilter(event.target.value);
+  };
+
+  useEffect(() => {
+  setTotalPages(Math.ceil(filteredQuakes.length / quakesPerPage));
+}, [filteredQuakes, quakesPerPage]);
+
+  useEffect(() => {
+  const filtered = quakes.filter((quake) => quake.properties.mag > filter);
+  setFilteredQuakes(filtered);
+}, [quakes, filter]);
+
+  const handleLoadMore = () => {
+    const newQuakesPerPage = quakesPerPage + 5;
+    setQuakesPerPage(newQuakesPerPage);
+  };
+
+ const handlePageChange = (newPage) => {
+  setCurrentPage(newPage);
+  setPage(newPage);
+};
+
+  const indexOfLastQuake = currentPage * quakesPerPage;
+  const indexOfFirstQuake = indexOfLastQuake - quakesPerPage;
+  const currentQuakes = filteredQuakes.slice(indexOfFirstQuake, indexOfLastQuake);
+
+  const renderQuakes = currentQuakes.map((quake, index) => {
+    return (
+      <div key={index} style={{ margin: "20px" }}>
+        <p>
+          <strong>Place:</strong> {quake.properties.place}
+        </p>
+        <p>
+          <strong>Magnitude:</strong> {quake.properties.mag}
+        </p>
+        <p>
+          <strong>Time:</strong> {new Date(quake.properties.time).toString()}
+        </p>
+      </div>
+    );
+  });
+
+  const pageNumbers = [];
+  for (let i = 1; i <= Math.ceil(filteredQuakes.length / quakesPerPage); i++) {
+    pageNumbers.push(i);
+  }
+
+  const renderPageNumbers = pageNumbers.map((number) => {
+    return (
+      <button key={number} onClick={() => handlePageChange(number)}>
+        {number}
+      </button>
+    );
+  });
+
+return (
+    <div style={{ marginTop: '60px' }}>
+      <div style={{ display: 'flex', justifyContent: 'center' }}>
+        <label htmlFor="filter">Filter quakes > </label>
+        <input
+          type="number"
+          id="filter"
+          value={filter}
+          onChange={handleFilterChange}
+        />
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+        {currentQuakes.map((quake, index) => (
+          <div
+            key={quake.id}
+            style={{
+              width: '19%',
+              border: '1px solid black',
+              padding: '10px',
+              textAlign: 'center',
+              backgroundColor:
+                quake.properties.mag > 5 ? 'red' : 'transparent'
+            }}
+          >
+            <h3>{quake.properties.title}</h3>
+            <p>Magnitude: {quake.properties.mag}</p>
+            <p>Time: {quake.properties.time}</p>
+          </div>
+        ))}
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'center' }}>
+        <button onClick={() => handlePageChange(page - 1)} disabled={page === 1}>
+          Prev
+        </button>
+        <button onClick={() => handlePageChange(page + 1)} disabled={page === totalPages}>
+Next
+</button>
+</div>
+<div style={{ display: 'flex', justifyContent: 'center' }}>
+<button onClick={handleLoadMore}>Load More</button>
+</div>
+<div style={{ display: 'flex', justifyContent: 'center' }}>
+<button onClick={handleRefresh}>Refresh List</button>
+</div>
+</div>
+);
+};
+
+export default Quake;
+
+*/
+
+
+   
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*
 import React, { useState, useEffect } from 'react';
+import './Quake.css';
+
+const Quake = () => {
+  const [earthquakes, setEarthquakes] = useState([]);
+  const [filteredQuakes, setFilteredQuakes] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [quakesPerPage, setQuakesPerPage] = useState(15);
+  const [magnitude, setMagnitude] = useState(5);
+  const [displayEarthquakes, setDisplayEarthquakes] = useState([]);
+
+ 
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      const res = await fetch('https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_month.geojson');
+      const data = await res.json();
+      setEarthquakes(data.features);
+      setFilteredQuakes(data.features.filter((earthquake) => earthquake.properties.mag >= magnitude));
+      setDisplayEarthquakes(data.features.filter((earthquake) => earthquake.properties.mag >= magnitude).slice(0, quakesPerPage));
+      setLoading(false);
+    };
+    fetchData();
+  }, []);
+
+  const handleFilter = (magnitude) => {
+    setMagnitude(magnitude);
+    setFilteredQuakes(earthquakes.filter((earthquake) => earthquake.properties.mag >= magnitude));
+    setDisplayEarthquakes(earthquakes.filter((earthquake) => earthquake.properties.mag >= magnitude).slice(0, quakesPerPage));
+  };
+
+  const handleLoadMore = () => {
+    let startIndex = currentPage * quakesPerPage;
+    let endIndex = startIndex + 5;
+    setDisplayEarthquakes(displayEarthquakes.concat(filteredQuakes.slice(startIndex, endIndex)));
+    setCurrentPage(currentPage + 1);
+  };
+
+  const refreshQuakes = async () => {
+    setLoading(true);
+    const res = await fetch('https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_month.geojson');
+    const data = await res.json();
+    setEarthquakes(data.features.slice(0, 15));
+    setFilteredQuakes(data.features.filter((earthquake) => earthquake.properties.mag >= magnitude).slice(0, 15));
+    setDisplayEarthquakes(data.features.filter((earthquake) => earthquake.properties.mag >= magnitude).slice(0, quakesPerPage));
+    setCurrentPage(1);
+    setLoading(false);
+  };
+
+*/
+
+
+
+
+
+
+
+
+
+
+
+/*
+import React, { useState, useEffect } from 'react';
+import './Quake.css';
+
+const Quake = () => {
+  const [earthquakes, setEarthquakes] = useState([]);
+  const [filteredQuakes, setFilteredQuakes] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [quakesPerPage, setQuakesPerPage] = useState(5);
+  const [magnitude, setMagnitude] = useState(5);
+  const [displayEarthquakes, setDisplayEarthquakes] = useState([]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      const res = await fetch('https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_month.geojson');
+      const data = await res.json();
+      setEarthquakes(data.features);
+      setFilteredQuakes(data.features.filter((earthquake) => earthquake.properties.mag >= magnitude));
+      setDisplayEarthquakes(data.features.filter((earthquake) => earthquake.properties.mag >= magnitude).slice(0, quakesPerPage));
+      setLoading(false);
+    };
+    fetchData();
+  }, []);
+
+  const handleFilter = (magnitude) => {
+    setMagnitude(magnitude);
+    setFilteredQuakes(earthquakes.filter((earthquake) => earthquake.properties.mag >= magnitude));
+    setDisplayEarthquakes(earthquakes.filter((earthquake) => earthquake.properties.mag >= magnitude).slice(0, quakesPerPage));
+  };
+
+  const handleLoadMore = () => {
+    let startIndex = currentPage * quakesPerPage;
+    let endIndex = startIndex + quakesPerPage;
+    setDisplayEarthquakes(filteredQuakes.slice(startIndex, endIndex));
+    setCurrentPage(currentPage + 1);
+  };
+
+  const refreshQuakes = async () => {
+    setLoading(true);
+    const res = await fetch('https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_month.geojson');
+    const data = await res.json();
+    setEarthquakes(data.features.slice(0, 15));
+    setFilteredQuakes(data.features.filter((earthquake) => earthquake.properties.mag >= magnitude).slice(0, 15));
+    setDisplayEarthquakes(data.features.filter((earthquake) => earthquake.properties.mag >= magnitude).slice(0, quakesPerPage));
+    setCurrentPage(1);
+    setLoading(false);
+  };
+
+ return (
+  <div className="quake-container">
+    <div className="quake-header">
+      <h2>Last 15 Quakes</h2>
+      <button className="refresh-button" onClick={refreshQuakes}>
+        Refresh
+      </button>
+      <button className="filter-button" onClick={() => filterQuakes(magnitude)}>
+        Filter Quakes > {magnitude}
+      </button>
+    </div>
+    {loading ? (
+      <div className="loading">Loading...</div>
+    ) : (
+      <ul className="quake-list">
+        {displayEarthquakes.map((earthquake) => (
+          <li key={earthquake.id} className="quake-item">
+            <div className={`quake-bullet magnitude-${earthquake.properties.mag}`} />
+            <p>
+              <span className="quake-date">{new Date(earthquake.properties.time).toLocaleString()}</span>
+              <br />
+              <span className="quake-location">{earthquake.properties.place}</span>
+              <br />
+              <span className="quake-magnitude">Magnitude: {earthquake.properties.mag}</span>
+            </p>
+          </li>
+        ))}
+      </ul>
+    )}
+    <div className="quake-pagination">
+      {currentPage > 1 && (
+        <button onClick={() => setCurrentPage(currentPage - 1)}>
+          Prev
+        </button>
+      )}
+      <span className="quake-page-number">
+        Page {currentPage} of {Math.ceil(filteredQuakes.length / quakesPerPage)}
+      </span>
+      {currentPage < Math.ceil(filteredQuakes.length / quakesPerPage) && (
+        <button onClick={() => setCurrentPage(currentPage + 1)}>
+          Next
+        </button>
+      )}
+    </div>
+    {filteredQuakes.length > 0 && (
+      <button className="load-more-button" onClick={handleLoadMore}>
+        Load More
+      </button>
+    )}
+  </div>
+);
+   
+}
+
+
+export default Quake;
+*/
+
+
+
+
+/*
+import React, { useState, useEffect } from 'react';
+import './Quake.css';
+
+const Quake = () => {
+  const [earthquakes, setEarthquakes] = useState([]);
+  const [filteredQuakes, setFilteredQuakes] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [quakesPerPage, setQuakesPerPage] = useState(5);
+  const [magnitude, setMagnitude] = useState(5);
+  const [displayEarthquakes, setDisplayEarthquakes] = useState([]);
+  const [quakesToDisplay, setQuakesToDisplay] = useState([]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      const res = await fetch('https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_month.geojson');
+      const data = await res.json();
+      setEarthquakes(data.features);
+      setDisplayEarthquakes(data.features.slice(0, quakesPerPage));
+      setLoading(false);
+    };
+    fetchData();
+  }, []);
+
+  const filterQuakes = (magnitude) => {
+    setMagnitude(magnitude);
+    setDisplayEarthquakes(
+      earthquakes.filter((earthquake) => earthquake.properties.mag >= magnitude).slice(0, quakesPerPage)
+    );
+  };
+
+  const handleLoadMore = () => {
+    let startIndex = currentPage * quakesPerPage;
+    let endIndex = startIndex + quakesPerPage;
+    setDisplayEarthquakes(earthquakes.slice(startIndex, endIndex));
+    setCurrentPage(currentPage + 1);
+  };
+
+   const refreshQuakes = async () => {
+    setLoading(true);
+    const res = await fetch('https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_month.geojson');
+    const data = await res.json();
+    setEarthquakes(data.features.slice(0, 15));
+    setLoading(false);
+  };
+
+  return (
+    <div className="quake-container">
+      <div className="quake-header">
+        <h2>Last 15 Quakes</h2>
+        <button className="refresh-button" onClick={refreshQuakes}>
+          Refresh
+        </button>
+        <button className="filter-button" onClick={() => filterQuakes(magnitude)}>
+          Filter Quakes > {magnitude}
+        </button>
+      </div>
+      {loading ? (
+        <div className="loading">Loading...</div>
+      ) : (
+        <ul className="quake-list">
+          {quakesToDisplay.map((earthquake) => (
+            <li key={earthquake.id} className="quake-item">
+              <div className={`quake-bullet magnitude-${earthquake.properties.mag}`} />
+              <p>
+                <span className="quake-date">{new Date(earthquake.properties.time).toLocaleString()}</span>
+                <br />
+                <span className="quake-location">{earthquake.properties.place}</span>
+                <br />
+                <span className="quake-magnitude">Magnitude: {earthquake.properties.mag}</span>
+              </p>
+            </li>
+          ))}
+        </ul>
+      )}
+      <div className="quake-pagination">
+        {currentPage > 1 && (
+          <button onClick={() => setCurrentPage(currentPage - 1)}>
+            Prev
+          </button>
+        )}
+        <span className="quake-page-number">
+          Page {currentPage} of {Math.ceil(filteredQuakes.length / quakesPerPage)}
+        </span>
+        {currentPage < Math.ceil(filteredQuakes.length / quakesPerPage) && (
+          <button onClick={() => setCurrentPage(currentPage + 1)}>
+            Next
+          </button>
+        )}
+      </div>
+      {filteredQuakes.length > 0 && (
+        <button className="load-more-button" onClick={handleLoadMore}>
+          Load More
+        </button>
+      )}
+    </div>
+   );
+}
+
+
+export default Quake;
+*/
+
+
+
+
+
+
+/*import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import './Quake.css';
 
@@ -74,7 +738,7 @@ const Quake = () => {
 
 export default Quake;
 
-
+*/
 
 
 

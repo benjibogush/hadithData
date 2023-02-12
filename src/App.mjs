@@ -1,5 +1,6 @@
 import React, { Component } from "react";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
+import "bootstrap/dist/css/bootstrap.min.css";
 import Home from "./components/home/Home.mjs";
 import Signup from "./components/signup/Signup.mjs";
 import Login from "./components/login/Login.mjs";
