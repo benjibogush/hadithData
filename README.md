@@ -20,6 +20,7 @@ Only and only add one at a time to ensure you do not make mistakes on other part
 
 
 ## Available Scripts
+### `npm audit fix --force` to address all issues in shell
 
 In the project directory, you can run:
 
